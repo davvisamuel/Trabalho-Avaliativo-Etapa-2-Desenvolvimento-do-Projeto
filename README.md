@@ -6,7 +6,7 @@
 |------|--------|
 | Maurilio Thomaz Coloda | Frontend e integração com a API |
 | Davi Samuel Schneider | Backend (API REST com Spring Boot) |
-| [Integrante 3] | Documentação e testes |
+| Luiz Felipe Ramos Mendes | Documentação e testes |
 
 ## Descrição do Sistema
 
@@ -65,6 +65,4 @@ Acesse em: `http://localhost:5173`
 - **Rotas protegidas**: redireciona para login quando não autenticado
 - **Navegação em breadcrumb** entre os níveis (apiário → colmeia → inspeção)
 
-## Link do Vídeo de Demonstração
 
-> *(a ser inserido após a gravação)*
