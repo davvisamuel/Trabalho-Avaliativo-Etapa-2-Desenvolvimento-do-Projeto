@@ -1,79 +1,101 @@
 # Modelo de Banco de Dados — ApiHub
 
-## Diagrama de Entidade-Relacionamento (descritivo)
+## Diagrama de Classes (gerado pelo banco)
 
+```mermaid
+classDiagram
+direction BT
+class apiario {
+   varchar(255) apiary_name
+   varchar(255) city
+   varchar(255) description
+   double precision latitude
+   double precision longitude
+   varchar(255) registration_number
+   varchar(255) territory_registration
+   bigint user_id
+   bigint id
+}
+class hive {
+   integer box_count
+   varchar(255) colony_origin
+   varchar(255) frame_type
+   varchar(255) name
+   bigint apiary_id
+   varchar(255) queen_identification_number
+   bigint id
+}
+class queen {
+   date birth_dat
+   varchar(255) breed
+   varchar(255) color
+   varchar(255) origin
+   varchar(255) identification_number
+}
+class users {
+   varchar(255) password
+   varchar(255) role
+   varchar(255) username
+   bigint id
+}
+
+apiario  -->  users : user_id:id
+hive  -->  apiario : apiary_id:id
+hive  -->  queen : queen_identification_number:identification_number
 ```
-USUARIO ──< APIARIO ──< COLMEIA >── RAINHA
-                              |
-                              └──< INSPECAO
-```
+
+> Imagem do diagrama disponível em `../evidencias/diagrama-banco.png`
 
 ---
 
 ## Entidades e Atributos
 
-### USUARIO
+### users
 | Atributo | Tipo | Restrição |
 |----------|------|-----------|
-| id | BIGINT | PK, AUTO_INCREMENT |
-| username | VARCHAR(50) | NOT NULL, UNIQUE |
-| password | VARCHAR(100) | NOT NULL (hash bcrypt) |
+| id | bigint | PK |
+| username | varchar(255) | NOT NULL |
+| password | varchar(255) | NOT NULL (hash bcrypt) |
+| role | varchar(255) | NOT NULL |
 
 ---
 
-### APIARIO
+### apiario
 | Atributo | Tipo | Restrição |
 |----------|------|-----------|
-| id | BIGINT | PK, AUTO_INCREMENT |
-| apiary_name | VARCHAR(100) | NOT NULL |
-| city | VARCHAR(100) | NOT NULL |
-| registration_number | VARCHAR(50) | NOT NULL |
-| territory_registration | VARCHAR(50) | NOT NULL |
-| description | VARCHAR(500) | NULL |
-| latitude | DOUBLE | NOT NULL (-90 a 90) |
-| longitude | DOUBLE | NOT NULL (-180 a 180) |
-| usuario_id | BIGINT | FK → USUARIO(id) |
+| id | bigint | PK |
+| apiary_name | varchar(255) | NOT NULL |
+| city | varchar(255) | NOT NULL |
+| description | varchar(255) | NULL |
+| latitude | double precision | NOT NULL |
+| longitude | double precision | NOT NULL |
+| registration_number | varchar(255) | NOT NULL |
+| territory_registration | varchar(255) | NOT NULL |
+| user_id | bigint | FK → users(id) |
 
 ---
 
-### COLMEIA
+### hive
 | Atributo | Tipo | Restrição |
 |----------|------|-----------|
-| id | BIGINT | PK, AUTO_INCREMENT |
-| name | VARCHAR(100) | NOT NULL |
-| frame_type | VARCHAR(50) | NOT NULL |
-| colony_origin | VARCHAR(100) | NOT NULL |
-| box_count | INT | NOT NULL |
-| apiario_id | BIGINT | FK → APIARIO(id) |
+| id | bigint | PK |
+| name | varchar(255) | NOT NULL |
+| frame_type | varchar(255) | NOT NULL |
+| colony_origin | varchar(255) | NOT NULL |
+| box_count | integer | NOT NULL |
+| apiary_id | bigint | FK → apiario(id) |
+| queen_identification_number | varchar(255) | FK → queen(identification_number) |
 
 ---
 
-### RAINHA
+### queen
 | Atributo | Tipo | Restrição |
 |----------|------|-----------|
-| id | BIGINT | PK, AUTO_INCREMENT |
-| identification_number | VARCHAR(50) | NOT NULL |
-| origin | VARCHAR(100) | NOT NULL |
-| breed | VARCHAR(50) | NOT NULL |
-| color | VARCHAR(30) | NOT NULL |
-| birth_date | DATE | NOT NULL |
-| colmeia_id | BIGINT | FK → COLMEIA(id), UNIQUE |
-
----
-
-### INSPECAO
-| Atributo | Tipo | Restrição |
-|----------|------|-----------|
-| id | BIGINT | PK, AUTO_INCREMENT |
-| inspection_date | DATE | NOT NULL |
-| queen_seen | BOOLEAN | NOT NULL |
-| eggs_seen | BOOLEAN | NOT NULL |
-| queen_cells_seen | BOOLEAN | NOT NULL |
-| queenless | BOOLEAN | NOT NULL |
-| brood_pattern | VARCHAR(100) | NOT NULL |
-| colony_strength | VARCHAR(50) | NOT NULL |
-| observations | VARCHAR(1000) | NULL |
-| colmeia_id | BIGINT | FK → COLMEIA(id) |
+| identification_number | varchar(255) | PK |
+| breed | varchar(255) | NOT NULL |
+| color | varchar(255) | NOT NULL |
+| origin | varchar(255) | NOT NULL |
+| birth_dat | date | NOT NULL |
 
 ---
 
@@ -81,16 +103,14 @@ USUARIO ──< APIARIO ──< COLMEIA >── RAINHA
 
 | Relacionamento | Tipo | Descrição |
 |----------------|------|-----------|
-| USUARIO → APIARIO | 1:N | Um usuário pode ter vários apiários |
-| APIARIO → COLMEIA | 1:N | Um apiário pode ter várias colmeias |
-| COLMEIA → RAINHA | 1:1 | Cada colmeia possui exatamente uma rainha |
-| COLMEIA → INSPECAO | 1:N | Uma colmeia pode ter várias inspeções ao longo do tempo |
+| users → apiario | 1:N | Um usuário pode ter vários apiários |
+| apiario → hive | 1:N | Um apiário pode ter várias colmeias |
+| hive → queen | N:1 | Cada colmeia referencia uma rainha pela identificação |
 
 ## Chaves
 
-- **Chaves Primárias (PK)**: id em todas as tabelas (geração automática)
+- **Chaves Primárias (PK)**: `id` em users, apiario e hive; `identification_number` em queen
 - **Chaves Estrangeiras (FK)**:
-  - `APIARIO.usuario_id` → `USUARIO.id` (cascade delete)
-  - `COLMEIA.apiario_id` → `APIARIO.id` (cascade delete)
-  - `RAINHA.colmeia_id` → `COLMEIA(id)` (cascade delete, unique)
-  - `INSPECAO.colmeia_id` → `COLMEIA(id)` (cascade delete)
+  - `apiario.user_id` → `users(id)`
+  - `hive.apiary_id` → `apiario(id)`
+  - `hive.queen_identification_number` → `queen(identification_number)`
