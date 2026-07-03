@@ -1,0 +1,889 @@
+openapi: 3.1.0
+info:
+  title: Gerenciamento de Apiário API
+  description: "API para gerenciamento de apiários, colmeias, rainhas e inspeções\
+    \ apícolas."
+  contact:
+    name: Davi Samuel Schneider
+  version: v1
+servers:
+- url: http://localhost:8080
+  description: Servidor local
+security:
+- bearerAuth: []
+tags:
+- name: Apiaries
+  description: "Operações para cadastro, consulta e exclusão de apiarios"
+- name: Auth
+  description: Operações de autenticação e cadastro de usuários
+- name: Hives
+  description: "Operações para cadastro, consulta e exclusão de colmeias"
+- name: Inspections
+  description: "Operações para cadastro, consulta e exclusão de inspeções de colmeias"
+paths:
+  /v1/hives/{hiveId}/inspection:
+    post:
+      tags:
+      - Inspections
+      summary: Cadastrar inspeção
+      description: Registra uma nova inspeção para uma colmeia
+      operationId: saveInspection
+      parameters:
+      - name: hiveId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Dados necessários para registrar uma inspeção
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InspectionPostRequest"
+            examples:
+              Inspeção válida:
+                description: Inspeção válida
+                value:
+                  inspectionDate: 2026-06-30
+                  queenSeen: true
+                  eggsSeen: true
+                  queenCellsSeen: false
+                  queenless: false
+                  broodPattern: Compacto
+                  colonyStrength: Forte
+                  observations: "Colônia saudável, sem sinais de doenças."
+        required: true
+      responses:
+        "201":
+          description: Inspeção cadastrada com sucesso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/InspectionPostResponse"
+        "400":
+          description: Erro de validação ou regra de negócio
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Token de autenticação ausente ou inválido
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Usuário autenticado não tem permissão para acessar este recurso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Colmeia não encontrada
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/InspectionPostResponse"
+  /v1/auth/register:
+    post:
+      tags:
+      - Auth
+      summary: Cadastrar usuário
+      description: Cria um novo usuário no sistema
+      operationId: register
+      requestBody:
+        description: Dados necessários para cadastrar um usuário
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRegisterRequest"
+            examples:
+              Usuário válido:
+                description: Usuário válido
+                value:
+                  username: davi.schneider
+                  password: senhaForte123
+        required: true
+      responses:
+        "201":
+          description: Usuário cadastrado com sucesso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AuthRegisterResponse"
+        "400":
+          description: Erro de validação ou regra de negócio
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: Nome de usuário já está em uso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /v1/auth/login:
+    post:
+      tags:
+      - Auth
+      summary: Autenticar usuário
+      description: Realiza o login do usuário e retorna o token de acesso
+      operationId: login
+      requestBody:
+        description: Credenciais necessárias para realizar o login
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthLoginRequest"
+            examples:
+              Credenciais válidas:
+                description: Credenciais válidas
+                value:
+                  username: davi.schneider
+                  password: senhaForte123
+        required: true
+      responses:
+        "200":
+          description: Login realizado com sucesso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AuthLoginResponse"
+        "400":
+          description: Erro de validação ou regra de negócio
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Usuário ou senha inválidos
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /v1/apiaries:
+    get:
+      tags:
+      - Apiaries
+      summary: Lista os apiarios do usuário
+      description: Retorna de forma paginada os apiarios cadastrados pelo usuário
+        autenticado
+      operationId: findAll
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          description: Apiarios listados com sucesso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageApiarioGetResponse"
+        "401":
+          description: Token de autenticação ausente ou inválido
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Usuário autenticado não tem permissão para acessar este recurso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    post:
+      tags:
+      - Apiaries
+      summary: Cadastrar apiario
+      description: Cria um novo apiario no sistema
+      operationId: save
+      requestBody:
+        description: Dados necessários para cadastrar um apiario
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiarioPostRequest"
+            examples:
+              Apiario válido:
+                description: Apiario válido
+                value:
+                  apiaryName: Apiário Santa Clara
+                  city: Cascavel
+                  registrationNumber: API-2026-001
+                  territoryRegistration: TR-458721
+                  description: Apiário localizado próximo a uma área de mata nativa.
+                  longitude: -53.4552
+                  latitude: -24.9558
+        required: true
+      responses:
+        "201":
+          description: Apiario cadastrado com sucesso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiarioPostResponse"
+        "400":
+          description: Erro de validação ou regra de negócio
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Token de autenticação ausente ou inválido
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Usuário autenticado não tem permissão para acessar este recurso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /v1/apiaries/{apiaryId}/hives:
+    get:
+      tags:
+      - Hives
+      summary: Lista as colmeias de um apiario
+      description: Retorna de forma paginada as colmeias vinculadas a um apiario
+      operationId: findAllHives
+      parameters:
+      - name: apiaryId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          description: Colmeias listadas com sucesso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageHiveGetResponse"
+        "401":
+          description: Token de autenticação ausente ou inválido
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Usuário autenticado não tem permissão para acessar este recurso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Apiario não encontrado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageHiveGetResponse"
+    post:
+      tags:
+      - Hives
+      summary: Cadastrar colmeia
+      description: Cria uma nova colmeia vinculada a um apiario
+      operationId: saveHive
+      parameters:
+      - name: apiaryId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Dados necessários para cadastrar uma colmeia
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HivePostRequest"
+            examples:
+              Colmeia válida:
+                description: Colmeia válida
+                value:
+                  name: Colmeia 01
+                  frameType: Langstroth
+                  colonyOrigin: Enxameio
+                  boxCount: 2
+                  queenRequest:
+                    identificationNumber: RA-2026-001
+                    origin: Apiário próprio
+                    breed: Africanizada
+                    color: Amarela
+                    birthDat: 2025-10-12
+        required: true
+      responses:
+        "201":
+          description: Colmeia cadastrada com sucesso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/HivePostResponse"
+        "400":
+          description: Erro de validação ou regra de negócio
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Token de autenticação ausente ou inválido
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Usuário autenticado não tem permissão para acessar este recurso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Apiario não encontrado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/HivePostResponse"
+  /v1/hives/{hiveId}/inspections:
+    get:
+      tags:
+      - Inspections
+      summary: Lista as inspeções de uma colmeia
+      description: Retorna de forma paginada as inspeções vinculadas a uma colmeia
+      operationId: findAllInspections
+      parameters:
+      - name: hiveId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          description: Inspeções listadas com sucesso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageInspectionGetResponse"
+        "401":
+          description: Token de autenticação ausente ou inválido
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Usuário autenticado não tem permissão para acessar este recurso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Colmeia não encontrada
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageInspectionGetResponse"
+  /v1/inspections/{id}:
+    delete:
+      tags:
+      - Inspections
+      summary: Deleta uma inspeção pelo id
+      description: Deleta uma inspeção do sistema pelo id
+      operationId: delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Inspeção deletada com sucesso
+        "401":
+          description: Token de autenticação ausente ou inválido
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Usuário autenticado não tem permissão para acessar este recurso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Inspeção não encontrada
+  /v1/hives/{id}:
+    delete:
+      tags:
+      - Hives
+      summary: Deleta uma colmeia pelo id
+      description: Deleta uma colmeia do sistema pelo id
+      operationId: deleteById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Colmeia deletada com sucesso
+        "401":
+          description: Token de autenticação ausente ou inválido
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Usuário autenticado não tem permissão para acessar este recurso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Colmeia não encontrada
+  /v1/apiaries/{id}:
+    delete:
+      tags:
+      - Apiaries
+      summary: Deleta um apiario pelo id
+      description: Deleta um apiario do sistema pelo id
+      operationId: deleteById_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Apiario deletado com sucesso
+        "401":
+          description: Token de autenticação ausente ou inválido
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Usuário autenticado não tem permissão para acessar este recurso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Apiario não encontrado
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        timestamp:
+          type: string
+        status:
+          type: integer
+          format: int32
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+    InspectionPostRequest:
+      type: object
+      properties:
+        inspectionDate:
+          type: string
+          format: date
+        queenSeen:
+          type: boolean
+        eggsSeen:
+          type: boolean
+        queenCellsSeen:
+          type: boolean
+        queenless:
+          type: boolean
+        broodPattern:
+          type: string
+        colonyStrength:
+          type: string
+        observations:
+          type: string
+          maxLength: 1000
+          minLength: 0
+      required:
+      - broodPattern
+      - colonyStrength
+      - eggsSeen
+      - inspectionDate
+      - queenCellsSeen
+      - queenSeen
+      - queenless
+    InspectionPostResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+    AuthRegisterResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+    AuthRegisterRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 50
+          minLength: 3
+        password:
+          type: string
+          maxLength: 100
+          minLength: 6
+      required:
+      - password
+      - username
+    AuthLoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+      - password
+      - username
+    AuthLoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+    ApiarioPostRequest:
+      type: object
+      properties:
+        apiaryName:
+          type: string
+          maxLength: 100
+          minLength: 0
+        city:
+          type: string
+          maxLength: 100
+          minLength: 0
+        registrationNumber:
+          type: string
+        territoryRegistration:
+          type: string
+        description:
+          type: string
+          maxLength: 500
+          minLength: 0
+        longitude:
+          type: number
+          format: double
+          maximum: 180.0
+          minimum: -180.0
+        latitude:
+          type: number
+          format: double
+          maximum: 90.0
+          minimum: -90.0
+      required:
+      - apiaryName
+      - city
+      - latitude
+      - longitude
+      - registrationNumber
+      - territoryRegistration
+    ApiarioPostResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+    HivePostRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        frameType:
+          type: string
+        colonyOrigin:
+          type: string
+        boxCount:
+          type: integer
+          format: int32
+        queenRequest:
+          $ref: "#/components/schemas/QueenRequest"
+      required:
+      - boxCount
+      - colonyOrigin
+      - frameType
+      - name
+      - queenRequest
+    QueenRequest:
+      type: object
+      properties:
+        identificationNumber:
+          type: string
+        origin:
+          type: string
+        breed:
+          type: string
+        color:
+          type: string
+        birthDat:
+          type: string
+          format: date
+      required:
+      - birthDat
+      - breed
+      - color
+      - identificationNumber
+      - origin
+    HivePostResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+    Pageable:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+        sort:
+          type: array
+          items:
+            type: string
+    InspectionGetResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        inspectionDate:
+          type: string
+          format: date
+        queenSeen:
+          type: boolean
+        eggsSeen:
+          type: boolean
+        queenCellsSeen:
+          type: boolean
+        queenless:
+          type: boolean
+        broodPattern:
+          type: string
+        colonyStrength:
+          type: string
+        observations:
+          type: string
+    PageInspectionGetResponse:
+      type: object
+      properties:
+        totalPages:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/InspectionGetResponse"
+        number:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        empty:
+          type: boolean
+    PageableObject:
+      type: object
+      properties:
+        offset:
+          type: integer
+          format: int64
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        unpaged:
+          type: boolean
+        pageSize:
+          type: integer
+          format: int32
+        pageNumber:
+          type: integer
+          format: int32
+        paged:
+          type: boolean
+    SortObject:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        unsorted:
+          type: boolean
+        sorted:
+          type: boolean
+    ApiarioGetResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        apiaryName:
+          type: string
+        city:
+          type: string
+        registrationNumber:
+          type: string
+        territoryRegistration:
+          type: string
+        description:
+          type: string
+        longitude:
+          type: number
+          format: double
+        latitude:
+          type: number
+          format: double
+    PageApiarioGetResponse:
+      type: object
+      properties:
+        totalPages:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiarioGetResponse"
+        number:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        empty:
+          type: boolean
+    HiveGetResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        frameType:
+          type: string
+        colonyOrigin:
+          type: string
+        boxCount:
+          type: integer
+          format: int32
+        queen:
+          $ref: "#/components/schemas/QueenResponse"
+    PageHiveGetResponse:
+      type: object
+      properties:
+        totalPages:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/HiveGetResponse"
+        number:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        empty:
+          type: boolean
+    QueenResponse:
+      type: object
+      properties:
+        identificationNumber:
+          type: string
+        origin:
+          type: string
+        breed:
+          type: string
+        color:
+          type: string
+        birthDat:
+          type: string
+          format: date
+  securitySchemes:
+    bearerAuth:
+      type: http
+      description: Informe o token JWT obtido em /v1/auth/login
+      name: bearerAuth
+      scheme: bearer
+      bearerFormat: JWT
